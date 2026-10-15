@@ -1,6 +1,7 @@
 use clap::Parser;
 use mycheatsheet::config::{self, Cli};
 use mycheatsheet::notes::{load_notes_dir, validate_notes_dir};
+use mycheatsheet::search::SearchIndex;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
@@ -59,6 +60,28 @@ fn main() -> ExitCode {
             eprintln!("  {}", w);
         }
         eprintln!();
+    }
+
+    // Initialize search index shared across frontends
+    let index = SearchIndex::from_database(&db);
+
+    // Initial search query preview if supplied via CLI
+    if let Some(ref q) = cli.query {
+        let results = index.search(q, cli.lang.as_deref());
+        println!("Initial query: \"{}\" ({} match(es))", q, results.len());
+        for (i, r) in results.iter().take(3).enumerate() {
+            println!(
+                "  [{}] {} (Part {}) > {}",
+                i + 1,
+                r.lang_name,
+                r.part,
+                r.entry_title
+            );
+        }
+        if results.len() > 3 {
+            println!("  ... and {} more results.", results.len() - 3);
+        }
+        println!();
     }
 
     if cli.terminal {
