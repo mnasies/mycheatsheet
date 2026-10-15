@@ -1,0 +1,19 @@
+[package]
+name = "mycheatsheet"
+version = "0.1.0"
+edition = "2021"
+authors = ["Mnasie"]
+description = "Fast, offline cheatsheet reference for programming languages in terminal and browser"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+directories = "5.0"
+
+[[bin]]
+name = "mycheatsheet"
+path = "src/main.rs"
+
+[lib]
+name = "mycheatsheet"
+path = "src/lib.rs"
