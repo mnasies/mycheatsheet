@@ -1,5 +1,6 @@
 use clap::Parser;
 use mycheatsheet::config::{self, Cli};
+use mycheatsheet::notes::{load_notes_dir, validate_notes_dir};
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
@@ -22,25 +23,64 @@ fn main() -> ExitCode {
         }
     };
 
+    // Protocol validation mode: mycheatsheet --check
     if cli.check {
-        println!("Checking notes directory: {}", notes_dir.display());
-        println!("Notes validation logic will run in Stage 2.");
+        println!("Validating notes in: {}", notes_dir.display());
+        let summary = validate_notes_dir(&notes_dir);
+
+        if !summary.is_ok() {
+            eprintln!();
+            for err in &summary.errors {
+                eprintln!("{}", err);
+            }
+            eprintln!(
+                "\nValidation failed: {} error(s) found across {} note(s).",
+                summary.errors.len(),
+                summary.notes_checked
+            );
+            return ExitCode::from(1);
+        }
+
+        println!(
+            "Success: All {} note(s) across {} language(s) passed validation ({} entries).",
+            summary.notes_checked, summary.languages_count, summary.entries_checked
+        );
         return ExitCode::SUCCESS;
+    }
+
+    // Load notes database for interactive modes (with fault tolerance)
+    let (db, warnings) = load_notes_dir(&notes_dir);
+    if !warnings.is_empty() {
+        eprintln!(
+            "Notice: {} note(s) encountered warnings or failed to parse:",
+            warnings.len()
+        );
+        for w in &warnings {
+            eprintln!("  {}", w);
+        }
+        eprintln!();
     }
 
     if cli.terminal {
         println!(
-            "Starting terminal UI with notes from: {}",
+            "Loaded {} language(s) with {} entries from: {}",
+            db.languages.len(),
+            db.total_entries_count(),
             notes_dir.display()
         );
-        println!("TUI interface will be launched in Stage 4.");
+        println!("Terminal UI will be launched in Stage 4.");
         return ExitCode::SUCCESS;
     }
 
     println!(
-        "Starting web server on 127.0.0.1:{} with notes from: {}",
-        cli.port,
+        "Loaded {} language(s) with {} entries from: {}",
+        db.languages.len(),
+        db.total_entries_count(),
         notes_dir.display()
+    );
+    println!(
+        "Starting web server on 127.0.0.1:{} (web mode)...",
+        cli.port
     );
     if cli.no_open {
         println!("Browser opening disabled via --no-open.");

@@ -1,0 +1,23 @@
+[[languages]]
+id = "go"
+name = "Go"
+order = 1
+version = "Go 1.22+"
+
+[[languages]]
+id = "rust"
+name = "Rust"
+order = 2
+version = "Rust 2021"
+
+[[languages]]
+id = "cpp"
+name = "C++"
+order = 3
+version = "C++20"
+
+[[languages]]
+id = "js"
+name = "JavaScript"
+order = 4
+version = "ES2022+"
