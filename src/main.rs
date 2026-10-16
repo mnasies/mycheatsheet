@@ -8,7 +8,56 @@ use std::process::ExitCode;
 use std::sync::Arc;
 
 fn main() -> ExitCode {
-    let cli = Cli::parse();
+    let mut cli = Cli::parse();
+
+    // Handle "add" subcommand or --add flag
+    if let Some(config::Commands::Add { path, name }) = cli.command {
+        let dest = config::default_notes_dir();
+        match mycheatsheet::notes::add_notes_folder(&path, name.as_deref(), &dest) {
+            Ok(summary) => {
+                println!(
+                    "Successfully added note(s) to {}:",
+                    summary.target_dir.display()
+                );
+                for n in &summary.notes_added {
+                    println!("  - {}", n);
+                }
+                println!(
+                    "\nTotal files copied: {}. You can now run 'mycheatsheet <NOTE>' to open a note.",
+                    summary.total_files_copied
+                );
+                return ExitCode::SUCCESS;
+            }
+            Err(err) => {
+                eprintln!("Error adding notes: {}", err);
+                return ExitCode::from(1);
+            }
+        }
+    }
+
+    if let Some(path) = cli.add {
+        let dest = config::default_notes_dir();
+        match mycheatsheet::notes::add_notes_folder(&path, None, &dest) {
+            Ok(summary) => {
+                println!(
+                    "Successfully added note(s) to {}:",
+                    summary.target_dir.display()
+                );
+                for n in &summary.notes_added {
+                    println!("  - {}", n);
+                }
+                println!(
+                    "\nTotal files copied: {}. You can now run 'mycheatsheet <NOTE>' to open a note.",
+                    summary.total_files_copied
+                );
+                return ExitCode::SUCCESS;
+            }
+            Err(err) => {
+                eprintln!("Error adding notes: {}", err);
+                return ExitCode::from(1);
+            }
+        }
+    }
 
     // Notes directory resolution
     let notes_dir = match config::resolve_notes_dir(cli.notes.as_deref()) {
@@ -17,12 +66,10 @@ fn main() -> ExitCode {
             eprintln!("Error: No notes directory could be found.");
             eprintln!();
             eprintln!("To set up your notes directory, you can:");
-            eprintln!("  1. Pass the path directly:  mycheatsheet --notes /path/to/notes");
-            eprintln!("  2. Set the environment var: export MYCHEATSHEET_NOTES=/path/to/notes");
-            eprintln!("  3. Add `notes_dir = \"/path/to/notes\"` in your mycheatsheet config.toml");
-            eprintln!(
-                "  4. Run the installer script to automatically link this repository's notes/"
-            );
+            eprintln!("  1. Add a notes folder:       mycheatsheet add /path/to/notes");
+            eprintln!("  2. Pass the path directly:   mycheatsheet --notes /path/to/notes");
+            eprintln!("  3. Set the environment var:  export MYCHEATSHEET_NOTES=/path/to/notes");
+            eprintln!("  4. Add `notes_dir = \"/path/to/notes\"` in your mycheatsheet config.toml");
             return ExitCode::from(1);
         }
     };
@@ -65,6 +112,29 @@ fn main() -> ExitCode {
         eprintln!();
     }
 
+    if db.languages.is_empty() {
+        eprintln!("No notes found in: {}", notes_dir.display());
+        eprintln!();
+        eprintln!("To add notes to your default collection, run:");
+        eprintln!("  mycheatsheet add /path/to/notes");
+        return ExitCode::from(1);
+    }
+
+    // Check if initial query matches an installed language/note name (e.g. "mycheatsheet Rust")
+    let mut direct_note_name: Option<String> = None;
+    if cli.lang.is_none() {
+        if let Some(ref q) = cli.query {
+            let q_trimmed = q.trim();
+            if let Some(matched) = db.languages.iter().find(|l| {
+                l.id.eq_ignore_ascii_case(q_trimmed) || l.name.eq_ignore_ascii_case(q_trimmed)
+            }) {
+                direct_note_name = Some(matched.name.clone());
+                cli.lang = Some(matched.id.clone());
+                cli.query = None;
+            }
+        }
+    }
+
     // Initialize search index shared across frontends
     let index = SearchIndex::from_database(&db);
 
@@ -100,13 +170,22 @@ fn main() -> ExitCode {
 
     // Default Web Mode: Single instance reuse check
     if let Some(existing_url) = launcher::check_existing_instance(cli.port) {
-        println!(
-            "Existing mycheatsheet instance detected at {}.",
+        let target_url = if let Some(ref lang) = cli.lang {
+            format!("{}/lang/{}", existing_url, lang)
+        } else {
             existing_url
-        );
+        };
+        println!("Existing mycheatsheet instance detected at {}.", target_url);
         if !cli.no_open {
-            println!("Opening existing session in browser...");
-            let _ = launcher::open_browser(&existing_url);
+            if let Some(ref note_name) = direct_note_name {
+                println!(
+                    "Opening note '{}' in existing browser session...",
+                    note_name
+                );
+            } else {
+                println!("Opening existing session in browser...");
+            }
+            let _ = launcher::open_browser(&target_url);
         }
         return ExitCode::SUCCESS;
     }
@@ -123,13 +202,21 @@ fn main() -> ExitCode {
         }
     };
 
-    let server_url = server.url();
-    println!(
-        "Loaded {} language(s) with {} entries.",
-        db_arc.languages.len(),
-        db_arc.total_entries_count()
-    );
-    println!("mycheatsheet server running at: {}", server_url);
+    let mut server_url = server.url();
+    if let Some(ref lang) = cli.lang {
+        server_url = format!("{}/lang/{}", server_url, lang);
+    }
+
+    if let Some(ref note_name) = direct_note_name {
+        println!("Opening note '{}': {}", note_name, server_url);
+    } else {
+        println!(
+            "Loaded {} language(s) with {} entries.",
+            db_arc.languages.len(),
+            db_arc.total_entries_count()
+        );
+        println!("mycheatsheet server running at: {}", server_url);
+    }
     println!("Serving Editorial Edition (auto-stops after 15 min idle). Press Ctrl+C to quit.");
 
     if !cli.no_open {

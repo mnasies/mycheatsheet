@@ -1,11 +1,26 @@
-use clap::Parser;
-use directories::ProjectDirs;
+use clap::{Parser, Subcommand};
+use directories::{BaseDirs, ProjectDirs};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Default TCP port for the local web server.
 pub const DEFAULT_PORT: u16 = 7878;
+
+/// Subcommands supported by the mycheatsheet CLI.
+#[derive(Subcommand, Debug, Clone, PartialEq, Eq)]
+pub enum Commands {
+    /// Add a notes directory or language folder to the default collection (~/.mycheatsheet/notes)
+    Add {
+        /// Path to the notes directory or language folder to add
+        #[arg(value_name = "PATH")]
+        path: PathBuf,
+
+        /// Optional custom name for the language/note (defaults to folder name or front matter lang)
+        #[arg(long = "name", value_name = "NAME")]
+        name: Option<String>,
+    },
+}
 
 /// Fast, offline syntax reference for programming languages.
 #[derive(Parser, Debug, Clone, PartialEq, Eq)]
@@ -14,10 +29,13 @@ pub const DEFAULT_PORT: u16 = 7878;
     author,
     version,
     about = "Fast, offline syntax reference for programming languages in terminal and browser",
-    after_help = "EXAMPLES:\n    mycheatsheet                 Launch web mode and open in browser\n    mycheatsheet -t              Launch full-screen terminal UI\n    mycheatsheet -l go           Filter initial view to Go\n    mycheatsheet --check         Validate all notes files and exit\n    mycheatsheet \"goroutine\"     Launch web mode with initial search query"
+    after_help = "EXAMPLES:\n    mycheatsheet                 Launch web mode and open in browser\n    mycheatsheet -t              Launch full-screen terminal UI\n    mycheatsheet Rust            Open the Rust note directly\n    mycheatsheet add ./notes     Add a notes directory to the default collection (~/.mycheatsheet/notes)\n    mycheatsheet -l go           Filter initial view to Go\n    mycheatsheet --check         Validate all notes files and exit\n    mycheatsheet \"goroutine\"     Launch web mode with initial search query"
 )]
 pub struct Cli {
-    /// Optional initial search query.
+    #[command(subcommand)]
+    pub command: Option<Commands>,
+
+    /// Optional initial note name (e.g. "Rust") or search query.
     #[arg(value_name = "QUERY")]
     pub query: Option<String>,
 
@@ -33,6 +51,10 @@ pub struct Cli {
     #[arg(long = "notes", value_name = "DIR")]
     pub notes: Option<PathBuf>,
 
+    /// Add a notes directory or language folder to the default collection.
+    #[arg(long = "add", value_name = "PATH", hide = true)]
+    pub add: Option<PathBuf>,
+
     /// Web server port (falls back to an open port if busy).
     #[arg(long = "port", default_value_t = DEFAULT_PORT, value_name = "PORT")]
     pub port: u16,
@@ -46,11 +68,22 @@ pub struct Cli {
     pub check: bool,
 }
 
+/// Returns the standard default notes directory: ~/.mycheatsheet/notes (or %USERPROFILE%\.mycheatsheet\notes).
+pub fn default_notes_dir() -> PathBuf {
+    if let Some(home) = BaseDirs::new().map(|b| b.home_dir().to_path_buf()) {
+        home.join(".mycheatsheet").join("notes")
+    } else {
+        PathBuf::from(".mycheatsheet").join("notes")
+    }
+}
+
 /// Resolves the notes directory path following the resolution precedence:
 /// 1. CLI flag `--notes <dir>`
 /// 2. Environment variable `MYCHEATSHEET_NOTES`
-/// 3. `notes_dir` field in `config.toml` inside the OS config directory
-/// 4. Default data directory via `directories` crate
+/// 3. Standard default notes directory `~/.mycheatsheet/notes` (if populated)
+/// 4. `notes_dir` field in `config.toml` inside the OS config directory
+/// 5. Default data directory via `directories` crate
+/// 6. Convenient fallback to local `./notes` directory if running in project root
 ///
 /// Returns `Some(PathBuf)` if a directory is resolved, or `None` if no configured directory exists.
 pub fn resolve_notes_dir(cli_override: Option<&Path>) -> Option<PathBuf> {
@@ -67,7 +100,17 @@ pub fn resolve_notes_dir(cli_override: Option<&Path>) -> Option<PathBuf> {
         }
     }
 
-    // 3. OS config directory: config.toml
+    // 3. Standard user default notes directory: ~/.mycheatsheet/notes (if populated)
+    let default_dir = default_notes_dir();
+    if default_dir.is_dir()
+        && fs::read_dir(&default_dir)
+            .map(|mut it| it.next().is_some())
+            .unwrap_or(false)
+    {
+        return Some(default_dir);
+    }
+
+    // 4. OS config directory: config.toml
     if let Some(proj_dirs) = ProjectDirs::from("com", "mnasie", "mycheatsheet") {
         let config_file = proj_dirs.config_dir().join("config.toml");
         if config_file.is_file() {
@@ -79,7 +122,7 @@ pub fn resolve_notes_dir(cli_override: Option<&Path>) -> Option<PathBuf> {
         }
     }
 
-    // 4. Default OS data directory
+    // 5. Default OS data directory
     if let Some(proj_dirs) = ProjectDirs::from("com", "mnasie", "mycheatsheet") {
         let data_notes = proj_dirs.data_dir().join("notes");
         if data_notes.is_dir() {
@@ -87,13 +130,14 @@ pub fn resolve_notes_dir(cli_override: Option<&Path>) -> Option<PathBuf> {
         }
     }
 
-    // 5. Convenient fallback to local `./notes` directory if running in project root
+    // 6. Convenient fallback to local `./notes` directory if running in project root
     let local_notes = PathBuf::from("notes");
     if local_notes.is_dir() {
         return Some(local_notes);
     }
 
-    None
+    // 7. Fallback to default notes dir so error messages point to standard location
+    Some(default_dir)
 }
 
 /// Minimal line-by-line parser for `notes_dir = "..."` to avoid unnecessary dependencies
@@ -177,5 +221,24 @@ mod tests {
         let cli_path = PathBuf::from("/override/notes");
         let resolved = resolve_notes_dir(Some(&cli_path));
         assert_eq!(resolved, Some(cli_path));
+    }
+
+    #[test]
+    fn test_cli_add_subcommand() {
+        let cli = Cli::parse_from(["mycheatsheet", "add", "./my-notes", "--name", "Python"]);
+        assert_eq!(
+            cli.command,
+            Some(Commands::Add {
+                path: PathBuf::from("./my-notes"),
+                name: Some("Python".to_string()),
+            })
+        );
+    }
+
+    #[test]
+    fn test_cli_query_as_note_name() {
+        let cli = Cli::parse_from(["mycheatsheet", "Rust"]);
+        assert_eq!(cli.command, None);
+        assert_eq!(cli.query.as_deref(), Some("Rust"));
     }
 }

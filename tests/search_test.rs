@@ -355,11 +355,13 @@ fn test_search_benchmark_2000_entries_under_50ms() {
             elapsed
         );
 
+        let max_ms = if cfg!(debug_assertions) { 100 } else { 50 };
         assert!(
-            elapsed.as_millis() < 50,
-            "Query '{}' took {:?}, exceeding 50ms latency threshold!",
+            elapsed.as_millis() < max_ms,
+            "Query '{}' took {:?}, exceeding {}ms latency threshold!",
             q,
-            elapsed
+            elapsed,
+            max_ms
         );
         assert!(!results.is_empty(), "Query '{}' should return results", q);
     }

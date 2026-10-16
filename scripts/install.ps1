@@ -75,6 +75,12 @@ if ($Uninstall) {
         Write-Host "  [Removed] Config directory: $ConfigDir"
     }
 
+    $HomeNotesDir = Join-Path $env:USERPROFILE ".mycheatsheet"
+    if (Test-Path $HomeNotesDir) {
+        Remove-Item $HomeNotesDir -Recurse -Force
+        Write-Host "  [Removed] Notes directory: $HomeNotesDir"
+    }
+
     $DataDir = Join-Path $env:LOCALAPPDATA "mycheatsheet"
     if (Test-Path $DataDir) {
         Remove-Item $DataDir -Recurse -Force
@@ -88,6 +94,19 @@ if ($Uninstall) {
 }
 
 Write-Host "Installing mycheatsheet on Windows..."
+
+$CleanupTemp = $false
+$TempDir = ""
+if (-not (Test-Path $NotesDir)) {
+    Write-Host "  [Fetch] Downloading repository notes and assets..."
+    $TempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("mycheatsheet-" + [System.Guid]::NewGuid().ToString().Substring(0, 8))
+    git clone --depth 1 https://github.com/mnasies/mycheatsheet.git $TempDir
+    $RepoDir = $TempDir
+    $NotesDir = Join-Path $RepoDir "notes"
+    $ReleaseBin = Join-Path $RepoDir "target\release\mycheatsheet.exe"
+    $SourceIcon = Join-Path $RepoDir "assets\icons\icon.ico"
+    $CleanupTemp = $true
+}
 
 # 1. Build release binary if missing
 if (-not (Test-Path $ReleaseBin)) {
@@ -129,7 +148,7 @@ Write-Host "  [Installed] Start Menu Shortcut -> $ShortcutPath"
 Add-PathEntry $InstallDir
 
 # 5. Install default notes
-$DataNotesDir = Join-Path $env:LOCALAPPDATA "mycheatsheet\notes"
+$DataNotesDir = Join-Path $env:USERPROFILE ".mycheatsheet\notes"
 if (-not (Test-Path $DataNotesDir)) {
     New-Item -ItemType Directory -Path $DataNotesDir -Force | Out-Null
 }
@@ -148,5 +167,10 @@ notes_dir = "$($DataNotesDir -replace '\\', '/')"
 Set-Content -Path $ConfigFile -Value $ConfigContent -Encoding UTF8
 Write-Host "  [Configured] $ConfigFile (pointing to $DataNotesDir)"
 
+if ($CleanupTemp -and $TempDir -and (Test-Path $TempDir)) {
+    Remove-Item $TempDir -Recurse -Force
+}
+
 Write-Host "`nInstallation complete!"
 Write-Host "You can now run 'mycheatsheet' from PowerShell or CMD, or launch it from the Start Menu."
+
