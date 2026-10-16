@@ -1,8 +1,11 @@
 use clap::Parser;
 use mycheatsheet::config::{self, Cli};
+use mycheatsheet::launcher;
 use mycheatsheet::notes::{load_notes_dir, validate_notes_dir};
 use mycheatsheet::search::SearchIndex;
+use mycheatsheet::web::server::WebServer;
 use std::process::ExitCode;
+use std::sync::Arc;
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
@@ -84,6 +87,7 @@ fn main() -> ExitCode {
         println!();
     }
 
+    // Interactive Terminal UI mode: mycheatsheet -t / --terminal
     if cli.terminal {
         if let Err(err) =
             mycheatsheet::tui::run_tui(&notes_dir, cli.query.as_deref(), cli.lang.as_deref())
@@ -94,22 +98,48 @@ fn main() -> ExitCode {
         return ExitCode::SUCCESS;
     }
 
-    println!(
-        "Loaded {} language(s) with {} entries from: {}",
-        db.languages.len(),
-        db.total_entries_count(),
-        notes_dir.display()
-    );
-    println!(
-        "Starting web server on 127.0.0.1:{} (web mode)...",
-        cli.port
-    );
-    if cli.no_open {
-        println!("Browser opening disabled via --no-open.");
-    } else {
-        println!("Opening default browser...");
+    // Default Web Mode: Single instance reuse check
+    if let Some(existing_url) = launcher::check_existing_instance(cli.port) {
+        println!(
+            "Existing mycheatsheet instance detected at {}.",
+            existing_url
+        );
+        if !cli.no_open {
+            println!("Opening existing session in browser...");
+            let _ = launcher::open_browser(&existing_url);
+        }
+        return ExitCode::SUCCESS;
     }
-    println!("Web server and UI will be launched in Stage 5.");
+
+    // Start local web server
+    let db_arc = Arc::new(db);
+    let index_arc = Arc::new(index);
+
+    let server = match WebServer::bind(db_arc.clone(), index_arc, cli.port, None) {
+        Ok(s) => s,
+        Err(err) => {
+            eprintln!("Error starting web server: {}", err);
+            return ExitCode::from(1);
+        }
+    };
+
+    let server_url = server.url();
+    println!(
+        "Loaded {} language(s) with {} entries.",
+        db_arc.languages.len(),
+        db_arc.total_entries_count()
+    );
+    println!("mycheatsheet server running at: {}", server_url);
+    println!("Serving Editorial Edition (auto-stops after 15 min idle). Press Ctrl+C to quit.");
+
+    if !cli.no_open {
+        let _ = launcher::open_browser(&server_url);
+    }
+
+    if let Err(err) = server.run() {
+        eprintln!("Web server error: {}", err);
+        return ExitCode::from(1);
+    }
 
     ExitCode::SUCCESS
 }
