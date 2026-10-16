@@ -16,6 +16,8 @@ INSTALL_BIN="${INSTALL_BIN_DIR}/mycheatsheet"
 DESKTOP_DIR="${HOME}/.local/share/applications"
 DESKTOP_FILE="${DESKTOP_DIR}/mycheatsheet.desktop"
 ICON_BASE_DIR="${HOME}/.local/share/icons/hicolor"
+INSTALL_DATA_DIR="${HOME}/.local/share/mycheatsheet"
+INSTALL_NOTES_DIR="${INSTALL_DATA_DIR}/notes"
 CONFIG_DIR="${HOME}/.config/mycheatsheet"
 CONFIG_FILE="${CONFIG_DIR}/config.toml"
 
@@ -26,7 +28,7 @@ usage() {
     echo "  ./scripts/install.sh [options]"
     echo ""
     echo "Options:"
-    echo "  --uninstall    Remove mycheatsheet binary, icons, desktop entries, and config"
+    echo "  --uninstall    Remove mycheatsheet binary, icons, desktop entries, notes, and config"
     echo "  --help         Display this help message"
     echo ""
 }
@@ -58,6 +60,12 @@ do_uninstall() {
     if [ -f "$svg_path" ]; then
         rm -f "$svg_path"
         echo "  [Removed] $svg_path"
+    fi
+
+    # Remove installed notes data
+    if [ -d "$INSTALL_DATA_DIR" ]; then
+        rm -rf "$INSTALL_DATA_DIR"
+        echo "  [Removed] $INSTALL_DATA_DIR"
     fi
 
     # Remove config
@@ -147,13 +155,18 @@ if [ -f "$src_svg" ]; then
 fi
 echo "  [Installed] Application icons -> $ICON_BASE_DIR"
 
-# 5. Write default user configuration pointing to notes/
+# 5. Install default notes curriculum to ~/.local/share/mycheatsheet/notes
+mkdir -p "$INSTALL_NOTES_DIR"
+cp -r "${NOTES_DIR}/"* "$INSTALL_NOTES_DIR/"
+echo "  [Installed] Default notes -> $INSTALL_NOTES_DIR"
+
+# 6. Write default user configuration pointing to installed notes
 mkdir -p "$CONFIG_DIR"
 cat > "$CONFIG_FILE" << EOF
 # mycheatsheet configuration
-notes_dir = "${NOTES_DIR}"
+notes_dir = "${INSTALL_NOTES_DIR}"
 EOF
-echo "  [Configured] $CONFIG_FILE (pointing to ${NOTES_DIR})"
+echo "  [Configured] $CONFIG_FILE (pointing to ${INSTALL_NOTES_DIR})"
 
 # 6. Update desktop & icon caches if tools exist
 if command -v gtk-update-icon-cache >/dev/null 2>&1; then

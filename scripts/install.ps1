@@ -75,6 +75,12 @@ if ($Uninstall) {
         Write-Host "  [Removed] Config directory: $ConfigDir"
     }
 
+    $DataDir = Join-Path $env:LOCALAPPDATA "mycheatsheet"
+    if (Test-Path $DataDir) {
+        Remove-Item $DataDir -Recurse -Force
+        Write-Host "  [Removed] Data directory: $DataDir"
+    }
+
     Remove-PathEntry $InstallDir
 
     Write-Host "`nmycheatsheet has been successfully uninstalled."
@@ -122,17 +128,25 @@ Write-Host "  [Installed] Start Menu Shortcut -> $ShortcutPath"
 # 4. Update PATH
 Add-PathEntry $InstallDir
 
-# 5. Create config.toml pointing to notes directory
+# 5. Install default notes
+$DataNotesDir = Join-Path $env:LOCALAPPDATA "mycheatsheet\notes"
+if (-not (Test-Path $DataNotesDir)) {
+    New-Item -ItemType Directory -Path $DataNotesDir -Force | Out-Null
+}
+Copy-Item "$NotesDir\*" -Destination $DataNotesDir -Recurse -Force
+Write-Host "  [Installed] Default notes -> $DataNotesDir"
+
+# 6. Create config.toml pointing to installed notes directory
 if (-not (Test-Path $ConfigDir)) {
     New-Item -ItemType Directory -Path $ConfigDir -Force | Out-Null
 }
 
 $ConfigContent = @"
 # mycheatsheet configuration
-notes_dir = "$($NotesDir -replace '\\', '/')"
+notes_dir = "$($DataNotesDir -replace '\\', '/')"
 "@
 Set-Content -Path $ConfigFile -Value $ConfigContent -Encoding UTF8
-Write-Host "  [Configured] $ConfigFile (pointing to $NotesDir)"
+Write-Host "  [Configured] $ConfigFile (pointing to $DataNotesDir)"
 
 Write-Host "`nInstallation complete!"
 Write-Host "You can now run 'mycheatsheet' from PowerShell or CMD, or launch it from the Start Menu."

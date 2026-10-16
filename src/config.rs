@@ -87,6 +87,12 @@ pub fn resolve_notes_dir(cli_override: Option<&Path>) -> Option<PathBuf> {
         }
     }
 
+    // 5. Convenient fallback to local `./notes` directory if running in project root
+    let local_notes = PathBuf::from("notes");
+    if local_notes.is_dir() {
+        return Some(local_notes);
+    }
+
     None
 }
 

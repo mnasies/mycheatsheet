@@ -21,22 +21,26 @@ Searching the web or prompting an LLM for quick syntax checks is noisy, slow, an
 1. **Local web UI**: A warm, distraction-free editorial interface with instant search, syntax highlighting, and copy buttons.
 2. **Terminal UI (TUI)**: A full-screen keyboard-driven terminal dashboard built on `ratatui`.
 
-The binary is completely language-agnostic. It doesn't know or care what languages you study; it reads plain Markdown files from a directory according to a simple protocol. You can add Python, Zig, Lua, or your team's internal DSL in five minutes without touching a line of Rust.
+It comes loaded with a complete default curriculum of **80 standardized notes across Go, Rust, C++, and JavaScript** (168 verified syntax patterns), so you can use it immediately without writing any notes.
+
+The binary is also completely language-agnostic. It reads plain Markdown files from a directory according to a simple protocol. You can add Python, Zig, Lua, or your team's internal DSL in five minutes without touching a line of Rust.
 
 ---
 
 ## Quick start
 
-### 1. Run directly with Cargo
+### 1. Run directly with Cargo (zero configuration)
+If running from the cloned repository, it automatically detects the bundled `notes/` directory:
 ```bash
 # Open in your default browser (http://127.0.0.1:7878)
-cargo run -- --notes notes
+cargo run
 
 # Or launch the interactive terminal UI
-cargo run -- --notes notes -t
+cargo run -- -t
 ```
 
-### 2. Install on Linux
+### 2. Install on Linux (installs binary, desktop launcher, and default notes)
+The installer builds the binary, deploys the desktop icon, and installs the default 80 notes to `~/.local/share/mycheatsheet/notes`:
 ```bash
 ./scripts/install.sh
 
@@ -49,6 +53,7 @@ mycheatsheet -t       # Terminal UI mode
 ```
 
 ### 3. Install on Windows (PowerShell)
+Installs the binary, Start Menu shortcut with icon, and default notes to `%LOCALAPPDATA%\mycheatsheet\notes`:
 ```powershell
 .\scripts\install.ps1
 
