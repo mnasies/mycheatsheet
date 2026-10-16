@@ -85,13 +85,12 @@ fn main() -> ExitCode {
     }
 
     if cli.terminal {
-        println!(
-            "Loaded {} language(s) with {} entries from: {}",
-            db.languages.len(),
-            db.total_entries_count(),
-            notes_dir.display()
-        );
-        println!("Terminal UI will be launched in Stage 4.");
+        if let Err(err) =
+            mycheatsheet::tui::run_tui(&notes_dir, cli.query.as_deref(), cli.lang.as_deref())
+        {
+            eprintln!("Error running terminal UI: {}", err);
+            return ExitCode::from(1);
+        }
         return ExitCode::SUCCESS;
     }
 

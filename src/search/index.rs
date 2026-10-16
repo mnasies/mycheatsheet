@@ -100,6 +100,24 @@ impl SearchIndex {
         self.entries.is_empty()
     }
 
+    /// Returns all indexed entries as search results (useful for default browsing views).
+    pub fn all_results(&self) -> Vec<SearchResult> {
+        self.entries
+            .iter()
+            .map(|e| SearchResult {
+                lang: e.lang.clone(),
+                lang_name: e.lang_name.clone(),
+                part: e.part,
+                part_title: e.part_title.clone(),
+                entry_id: e.entry_id.clone(),
+                entry_title: e.entry_title.clone(),
+                description: e.description.clone(),
+                snippet: e.snippet.clone(),
+                score: 1.0,
+            })
+            .collect()
+    }
+
     /// Searches the index with optional language override.
     ///
     /// Query shortcuts like `go: defer` or `lang:go defer` are parsed automatically.
