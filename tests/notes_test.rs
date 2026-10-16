@@ -186,3 +186,53 @@ print("Hello")
     assert_eq!(db.parts.len(), 1);
     assert_eq!(db.parts[0].title, "Python Basics");
 }
+
+#[test]
+fn test_integration_add_notes_folder_and_load() {
+    let temp_source = tempfile::tempdir().expect("tempdir");
+    let zig_src = temp_source.path().join("zig");
+    fs::create_dir_all(&zig_src).expect("mkdir");
+
+    fs::write(
+        zig_src.join("01-syntax.md"),
+        r#"+++
+title = "Zig Syntax"
+lang = "zig"
+part = 1
+tags = ["zig", "syntax"]
++++
+
+## Hello Zig
+Basic program entry point.
+
+```zig
+const std = @import("std");
+
+pub fn main() void {
+    std.debug.print("Hello, Zig!\n", .{});
+}
+```
+"#,
+    )
+    .expect("write");
+
+    let temp_store = tempfile::tempdir().expect("tempdir");
+    let notes_store = temp_store.path().join("notes");
+
+    // Add zig notes to notes store
+    let summary = mycheatsheet::notes::add_notes_folder(&zig_src, None, &notes_store).expect("add");
+    assert_eq!(summary.notes_added, vec!["zig"]);
+    assert_eq!(summary.total_files_copied, 1);
+
+    // Verify loading from store
+    let (db, warnings) = load_notes_dir(&notes_store);
+    assert!(warnings.is_empty());
+    assert_eq!(db.languages.len(), 1);
+    assert_eq!(db.languages[0].id, "zig");
+
+    // Verify duplicate rejection (case-insensitive "Zig")
+    let duplicate_err =
+        mycheatsheet::notes::add_notes_folder(&zig_src, Some("Zig"), &notes_store).unwrap_err();
+    assert!(duplicate_err.contains("already exists"));
+    assert!(duplicate_err.contains("No two notes can have the same name"));
+}

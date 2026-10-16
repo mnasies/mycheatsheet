@@ -17,7 +17,7 @@ DESKTOP_DIR="${HOME}/.local/share/applications"
 DESKTOP_FILE="${DESKTOP_DIR}/mycheatsheet.desktop"
 ICON_BASE_DIR="${HOME}/.local/share/icons/hicolor"
 INSTALL_DATA_DIR="${HOME}/.local/share/mycheatsheet"
-INSTALL_NOTES_DIR="${INSTALL_DATA_DIR}/notes"
+INSTALL_NOTES_DIR="${HOME}/.mycheatsheet/notes"
 CONFIG_DIR="${HOME}/.config/mycheatsheet"
 CONFIG_FILE="${CONFIG_DIR}/config.toml"
 
@@ -63,6 +63,14 @@ do_uninstall() {
     fi
 
     # Remove installed notes data
+    if [ -d "$INSTALL_NOTES_DIR" ]; then
+        rm -rf "$INSTALL_NOTES_DIR"
+        echo "  [Removed] $INSTALL_NOTES_DIR"
+    fi
+    if [ -d "${HOME}/.mycheatsheet" ]; then
+        rm -rf "${HOME}/.mycheatsheet"
+        echo "  [Removed] ${HOME}/.mycheatsheet"
+    fi
     if [ -d "$INSTALL_DATA_DIR" ]; then
         rm -rf "$INSTALL_DATA_DIR"
         echo "  [Removed] $INSTALL_DATA_DIR"
@@ -95,6 +103,18 @@ elif [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
 fi
 
 echo "Installing mycheatsheet..."
+
+CLEANUP_TEMP=false
+TEMP_DIR=""
+if [ ! -d "$NOTES_DIR" ]; then
+    echo "  [Fetch] Downloading repository notes and assets..."
+    TEMP_DIR="$(mktemp -d)"
+    git clone --depth 1 https://github.com/mnasies/mycheatsheet.git "$TEMP_DIR"
+    REPO_DIR="$TEMP_DIR"
+    NOTES_DIR="${REPO_DIR}/notes"
+    BIN_SRC="${REPO_DIR}/target/release/mycheatsheet"
+    CLEANUP_TEMP=true
+fi
 
 # 1. Ensure release binary is built
 if [ ! -f "$BIN_SRC" ]; then
@@ -176,6 +196,11 @@ if command -v update-desktop-database >/dev/null 2>&1; then
     update-desktop-database "$DESKTOP_DIR" >/dev/null 2>&1 || true
 fi
 
+if [ "$CLEANUP_TEMP" = true ] && [ -n "$TEMP_DIR" ] && [ -d "$TEMP_DIR" ]; then
+    rm -rf "$TEMP_DIR"
+fi
+
 echo ""
 echo "Installation complete!"
 echo "Run 'mycheatsheet' to launch in your browser, or 'mycheatsheet -t' for the terminal UI."
+
