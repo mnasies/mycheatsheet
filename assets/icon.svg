@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a241f" />
+      <stop offset="100%" stop-color="#181411" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000000" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- App Icon Background Squircle -->
+  <rect x="16" y="16" width="480" height="480" rx="108" ry="108" fill="url(#bgGrad)" stroke="#3a3229" stroke-width="6" />
+
+  <!-- Book Body with Drop Shadow -->
+  <g filter="url(#shadow)">
+    <!-- Book Cover Base (Terracotta Spine & Edge) -->
+    <path d="M 104,372 C 172,344 238,344 256,360 C 274,344 340,344 408,372 L 408,384 C 340,356 274,356 256,372 C 238,356 172,356 104,384 Z" 
+          fill="#8e3d25" />
+    
+    <!-- Open Book Pages (Warm Paper) -->
+    <path d="M 110,360 C 176,334 240,334 256,348 C 272,334 336,334 402,360 L 402,154 C 336,128 272,128 256,142 C 240,128 176,128 110,154 Z" 
+          fill="#f4ecd8" stroke="#d8cdb4" stroke-width="4" stroke-linejoin="round" />
+
+    <!-- Central Spine Bookmark Ribbon (Terracotta) -->
+    <path d="M 252,136 L 260,136 L 260,366 L 256,362 L 252,366 Z" fill="#b85437" />
+
+    <!-- Left Page: Terminal Prompt Motif (> _) -->
+    <!-- Chevron '>' -->
+    <path d="M 152,216 L 194,248 L 152,280" 
+          fill="none" stroke="#b85437" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- Underscore Cursor '_' -->
+    <line x1="208" y1="280" x2="236" y2="280" 
+          stroke="#b85437" stroke-width="18" stroke-linecap="round" />
+
+    <!-- Right Page: Syntax Code Lines -->
+    <!-- Line 1: Keyword + Ident -->
+    <line x1="284" y1="210" x2="330" y2="210" stroke="#a32d18" stroke-width="14" stroke-linecap="round" />
+    <line x1="344" y1="210" x2="378" y2="210" stroke="#2b221b" stroke-width="14" stroke-linecap="round" />
+
+    <!-- Line 2: Indented String -->
+    <line x1="300" y1="246" x2="372" y2="246" stroke="#2b6838" stroke-width="14" stroke-linecap="round" />
+
+    <!-- Line 3: Indented Number & Operator -->
+    <line x1="300" y1="282" x2="346" y2="282" stroke="#9c5c16" stroke-width="14" stroke-linecap="round" />
+
+    <!-- Line 4: Closing Bracket -->
+    <line x1="284" y1="318" x2="298" y2="318" stroke="#2b221b" stroke-width="14" stroke-linecap="round" />
+  </g>
+</svg>

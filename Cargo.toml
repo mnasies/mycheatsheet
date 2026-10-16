@@ -5,6 +5,7 @@ edition = "2021"
 authors = ["Mnasie"]
 description = "Fast, offline cheatsheet reference for programming languages in terminal and browser"
 license = "MIT OR Apache-2.0"
+build = "build.rs"
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
@@ -19,9 +20,11 @@ pulldown-cmark = "0.12"
 open = "5.3"
 serde_json = "1.0"
 
-
 [dev-dependencies]
 tempfile = "3.10"
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
 
 [[bin]]
 name = "mycheatsheet"
