@@ -4,8 +4,10 @@
    ========================================================================== */
 
 :root {
-  --font-serif: Charter, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --font-mono: "JetBrains Mono", "Fira Code", Consolas, "SF Mono", Monaco, Menlo, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Noto Sans", Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: var(--font-sans);
+  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Noto Sans", Ubuntu, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   
   /* Light Theme: Warm Paper & Dark Brown Ink */
   --bg-page: #f4ecd8;
@@ -71,9 +73,10 @@ body {
   padding: 0;
   background-color: var(--bg-page);
   color: var(--text-main);
-  font-family: var(--font-serif);
-  font-size: 1.125rem; /* ~18px */
-  line-height: 1.68;
+  font-family: var(--font-sans);
+  font-size: 1rem; /* 16px */
+  line-height: 1.6;
+  letter-spacing: -0.011em;
   transition: background-color 0.25s ease, color 0.25s ease;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -116,17 +119,16 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 }
 
 .logo-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  font-variant: small-caps;
+  font-size: 1.35rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
 }
 
 .logo-edition {
   font-size: 0.85rem;
   color: var(--accent);
   font-style: italic;
-  font-weight: 400;
+  font-weight: 500;
 }
 
 /* Global Search Bar */
@@ -161,8 +163,8 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   border: none;
   background: transparent;
   color: var(--text-main);
-  font-family: var(--font-serif);
-  font-size: 1rem;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
   width: 100%;
 }
 
@@ -248,7 +250,8 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   padding: 0.35rem 0.75rem;
   border-radius: 4px;
   cursor: pointer;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
+  font-weight: 500;
   font-size: 0.9rem;
   display: flex;
   align-items: center;
@@ -340,17 +343,19 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 }
 
 .card-order {
-  font-size: 2.4rem;
+  font-size: 2rem;
   font-weight: 700;
   color: var(--border-rule);
   line-height: 1;
   margin-bottom: 0.5rem;
-  font-family: var(--font-serif);
+  font-family: var(--font-mono);
+  letter-spacing: -0.03em;
 }
 
 .card-title {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
   margin: 0 0 0.4rem;
 }
 
@@ -461,7 +466,8 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 }
 
 .part-numeral {
-  font-size: 3.2rem;
+  font-family: var(--font-mono);
+  font-size: 2.6rem;
   font-weight: 700;
   line-height: 1;
   color: var(--accent);
@@ -473,10 +479,11 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 }
 
 .part-title {
-  font-size: 2.1rem;
+  font-size: 1.85rem;
   font-weight: 700;
+  letter-spacing: -0.025em;
   margin: 0;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .part-tags {
@@ -502,8 +509,9 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 }
 
 .entry-title {
-  font-size: 1.4rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
   margin: 0 0 0.5rem;
   color: var(--text-main);
   scroll-margin-top: 5rem;
@@ -512,7 +520,8 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 .entry-desc {
   margin: 0 0 1rem;
   color: var(--text-muted);
-  font-size: 1.05rem;
+  font-size: 0.98rem;
+  line-height: 1.55;
 }
 
 /* Code Blocks & Copy Integration */
@@ -542,7 +551,8 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   background: transparent;
   border: 1px solid var(--border-rule);
   color: var(--text-main);
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
+  font-weight: 500;
   font-size: 0.78rem;
   padding: 0.15rem 0.5rem;
   border-radius: 3px;
