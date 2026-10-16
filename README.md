@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows-lightgrey?logo=linux&logoColor=white" alt="Platform" />
   <img src="https://img.shields.io/badge/rust-2021%20edition-orange?logo=rust" alt="Rust" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License" /></a>
-  <a href="https://github.com/mnasies/mycheatsheet/releases"><img src="https://img.shields.io/github/v/release/mnasies/mycheatsheet?color=success" alt="Latest Release" /></a>
+  <a href="https://github.com/mnasies/mycheatsheet/releases"><img src="https://img.shields.io/badge/release-v0.1.0-blue?logo=github" alt="Latest Release" /></a>
 </p>
 
 ```text
@@ -44,18 +44,27 @@ The binary is also completely language-agnostic. It reads plain Markdown files f
 
 ## Quick start
 
-### 1. Run directly with Cargo (zero configuration)
-If running from the cloned repository, it automatically detects the bundled `notes/` directory:
-```bash
-# Open in your default browser (http://127.0.0.1:7878)
-cargo run
+### 1. Download pre-compiled binary (Quickest)
+Download the standalone executable from the [Releases](https://github.com/mnasies/mycheatsheet/releases/latest) page:
 
-# Or launch the interactive terminal UI
-cargo run -- -t
+**Linux**:
+```bash
+# Download and install binary
+curl -sSLO https://github.com/mnasies/mycheatsheet/releases/latest/download/mycheatsheet-linux-x86_64.tar.gz
+tar -xzf mycheatsheet-linux-x86_64.tar.gz
+sudo install -m 755 mycheatsheet /usr/local/bin/
+
+# Launch
+mycheatsheet
 ```
 
-### 2. Install on Linux (installs binary, desktop launcher, and default notes)
-The installer builds the binary, deploys the desktop icon, and installs the default 80 notes to `~/.local/share/mycheatsheet/notes`:
+**Windows**:
+Download `mycheatsheet-windows-x86_64.zip` from [Releases](https://github.com/mnasies/mycheatsheet/releases/latest), unpack `mycheatsheet.exe`, and place it in your `PATH`.
+
+---
+
+### 2. Install on Linux (Desktop launcher + bundled notes)
+The installer builds or places the binary, deploys the desktop icon to your application launcher, and installs the default 80 notes to `~/.local/share/mycheatsheet/notes`:
 ```bash
 ./scripts/install.sh
 
@@ -67,13 +76,27 @@ mycheatsheet -t       # Terminal UI mode
 ./scripts/install.sh --uninstall
 ```
 
+---
+
 ### 3. Install on Windows (PowerShell)
-Installs the binary, Start Menu shortcut with icon, and default notes to `%LOCALAPPDATA%\mycheatsheet\notes`:
+Installs the binary, Start Menu shortcut with embedded icon, and default notes to `%LOCALAPPDATA%\mycheatsheet\notes`:
 ```powershell
 .\scripts\install.ps1
 
 # To uninstall:
 .\scripts\install.ps1 -Uninstall
+```
+
+---
+
+### 4. Run directly with Cargo (from source)
+If running inside the repository clone, it automatically detects the bundled `notes/` directory:
+```bash
+# Open in your default browser (http://127.0.0.1:7878)
+cargo run
+
+# Or launch the interactive terminal UI
+cargo run -- -t
 ```
 
 ---
@@ -105,132 +128,51 @@ Options:
 
 ---
 
-## Adding custom languages (The Notes Protocol)
+## Adding custom languages
 
-The core application has **zero hardcoded languages**. You can add your own notes by creating a directory and following this simple protocol.
+`mycheatsheet` has **zero hardcoded languages**. You can add your own notes by creating a directory and following the protocol:
 
-### Directory structure
-```text
-my-notes/
-├── languages.toml              # Optional: display names and UI ordering
-└── python/                     # Folder name becomes the language ID
-    ├── 01-program-structure.md
-    ├── 02-variables.md
-    └── ...
-```
+1. **Folder structure**: Create `notes/<language-id>/XX-slug.md`.
+2. **Front matter**: Add `+++` TOML headers with `title`, `lang`, `part`, and `tags`.
+3. **Entries**: Write `## Pattern Title` followed by explanatory text and fenced code blocks.
+4. **Validation**: Run `mycheatsheet --notes /path/to/notes --check` to verify syntax.
 
-### `languages.toml` format
-```toml
-[[languages]]
-id = "python"
-name = "Python"
-order = 1
-version = "3.12+"
-```
-
-### Note file specification
-Every note file is named `<number>-<slug>.md` (e.g., `01-program-structure.md`) and contains TOML front matter followed by Markdown entries:
-
-```markdown
-+++
-title = "Program structure & entry point"
-lang = "python"
-part = 1
-tags = ["entry", "main", "script"]
-version = "Python 3.12+"
-+++
-
-## Script entry point
-Python scripts run top-to-bottom. Use the `__name__` check to allow running standalone or as an imported module.
-
-```python
-def main():
-    print("Hello, Python!")
-
-if __name__ == "__main__":
-    main()
-```
-
-## Command line arguments
-The `sys.argv` list contains CLI parameters starting with the script name.
-
-```python
-import sys
-
-print(f"Arguments: {sys.argv[1:]}")
-```
-```
-
-### Protocol rules
-1. **Filename**: Must start with a 2-digit number matching the `part` number in the front matter (`01-*.md`).
-2. **Front matter**: Enclosed in `+++`. Requires `title`, `lang`, `part`, and at least one tag in `tags`.
-3. **Entries**: Every section begins with a `## <Title>` heading.
-4. **Description & Code**: Each section must have a brief description and at least one fenced code block (```` ```<lang> ````).
-5. **No raw HTML**: Keep content in clean Markdown; raw HTML is stripped for security.
-
-### Check your notes
-Run the built-in validator to catch typos or syntax mistakes before launching:
-```bash
-mycheatsheet --notes /path/to/my-notes --check
-```
-If anything is broken, it tells you the exact file and line number:
-```text
-notes/python/02-variables.md:14: unclosed code block in entry 'Variable assignment'
-Validation failed: 1 error(s) found across 20 note(s).
-```
+📖 Read the complete [Notes Protocol Specification](NOTES_PROTOCOL.md) for directory formats, front matter schemas, and validation rules.
 
 ---
 
-## How it works
+## Architecture & Design
 
-- **Parser & Loader**: [`src/notes/`](src/notes/) scans note folders and parses front matter and code blocks into an in-memory database. Corrupted files trigger non-fatal warnings so one bad note never crashes your app.
-- **Search Engine**: [`src/search/`](src/search/) tokenizes titles, tags, and code blocks. Queries run in under 2ms using a zero-allocation Levenshtein distance implementation pruned with 64-bit character bitmasks (`POPCNT`).
-- **Web Server**: [`src/web/`](src/web/) uses `tiny_http` with zero async runtime overhead. It strictly binds to `127.0.0.1`, validates `Host` headers to prevent DNS rebinding, escapes HTML, and automatically shuts down after 15 minutes of inactivity. Assets are embedded directly in the binary.
-- **Terminal UI**: [`src/tui/`](src/tui/) uses `ratatui` and `crossterm` with a 4-zone layout (search top, results left, preview right, help bottom).
-- **Clipboard**: [`src/tui/clipboard.rs`](src/tui/clipboard.rs) tries the OS clipboard via `arboard`, then falls back to ANSI OSC 52 escape sequences if run in an environment without X11/Wayland utilities.
+`mycheatsheet` is built for sub-millisecond local latency with zero heavyweight async runtime dependencies.
 
----
+- **Storage**: Plain Markdown files with TOML front matter.
+- **Search Engine**: Hardware-accelerated 64-bit character bitmask pruning (`POPCNT`) and stack-allocated Levenshtein distance scoring.
+- **Terminal UI**: Alternate screen buffer with `ratatui` and dual-tier clipboard (OS clipboard + ANSI OSC 52).
+- **Web UI**: In-process `tiny_http` server, DNS-rebinding protection, CommonMark rendering, and 15-minute inactivity auto-shutdown.
 
-## What it can't do yet
-
-- **Live note editing in-app**: Notes are read-only when viewing. You edit them in your favorite editor; the web UI picks up edits on refresh, and the TUI reloads them when you press `r`.
-- **Fuzzy regex searching**: The search engine supports token prefix matching and typo tolerance, but not full regex queries.
+📖 Read the complete [Architecture & Design Document](ARCHITECTURE.md) with subsystem breakdowns and Mermaid diagrams.
 
 ---
 
-## Development
+## Development & Contributing
+
+Contributions are warmly welcomed! Please read our [Contributing Guide](CONTRIBUTING.md) before submitting pull requests.
 
 ```bash
-# Build dev binary
-cargo build
+# Clone and checkout dev branch
+git clone https://github.com/mnasies/mycheatsheet.git
+cd mycheatsheet
+git checkout dev
 
 # Run all 40 unit and integration tests
 cargo test
 
-# Check code formatting
+# Check code formatting & clippy
 cargo fmt --check
-
-# Run linter
 cargo clippy -- -D warnings
 
 # Validate all shipped notes
-cargo run -- --notes notes --check
-```
-
-### Repo layout
-```text
-mycheatsheet/
-├── assets/          # Vector SVG icon, multi-resolution PNGs, ICO
-├── notes/           # 80 standardized notes (Go, Rust, C++, JavaScript)
-├── scripts/         # Linux (install.sh) and Windows (install.ps1) installers
-├── src/
-│   ├── config.rs    # CLI arguments & path resolution
-│   ├── launcher/    # Browser launcher & single-instance detection
-│   ├── notes/       # Parser, loader, validation rules
-│   ├── search/      # In-memory index, tokenizer, typo scoring
-│   ├── tui/         # Ratatui dashboard, key events, clipboard
-│   └── web/         # Localhost HTTP server, markdown renderer, embedded assets
-└── tests/           # Integration tests for notes, search, TUI, and web
+cargo run -- --check
 ```
 
 ---
