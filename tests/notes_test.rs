@@ -15,9 +15,9 @@ fn test_real_notes_directory_validates_cleanly() {
         summary.is_ok(),
         "notes directory should pass all protocol validation rules"
     );
-    assert_eq!(summary.notes_checked, 4);
-    assert_eq!(summary.languages_count, 2);
-    assert!(summary.entries_checked >= 10);
+    assert_eq!(summary.notes_checked, 80);
+    assert_eq!(summary.languages_count, 4);
+    assert!(summary.entries_checked >= 150);
 }
 
 #[test]
@@ -26,7 +26,7 @@ fn test_load_real_notes_database() {
     let (db, warnings) = load_notes_dir(notes_dir);
 
     assert!(warnings.is_empty(), "expected zero warnings on real notes");
-    assert!(db.languages.len() >= 2);
+    assert_eq!(db.languages.len(), 4);
 
     let go = db.get_language("go").expect("go should be present");
     assert_eq!(go.name, "Go");
@@ -35,8 +35,14 @@ fn test_load_real_notes_database() {
     let rust = db.get_language("rust").expect("rust should be present");
     assert_eq!(rust.name, "Rust");
 
+    let cpp = db.get_language("cpp").expect("cpp should be present");
+    assert_eq!(cpp.name, "C++");
+
+    let js = db.get_language("js").expect("js should be present");
+    assert_eq!(js.name, "JavaScript");
+
     let go_parts = db.get_parts_for_lang("go");
-    assert_eq!(go_parts.len(), 2);
+    assert_eq!(go_parts.len(), 20);
     assert_eq!(go_parts[0].part, 1);
     assert_eq!(go_parts[0].title, "Program structure & entry point");
     assert_eq!(go_parts[1].part, 2);
