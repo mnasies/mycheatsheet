@@ -1,6 +1,21 @@
-# mycheatsheet
+<p align="center">
+  <img src="assets/icon.svg" alt="mycheatsheet logo" width="128" height="128" />
+</p>
 
-Fast, offline syntax cheatsheet for programming languages in your terminal and browser.
+<h1 align="center">mycheatsheet</h1>
+
+<p align="center">
+  <strong>Fast, offline syntax cheatsheet for programming languages in your terminal and browser.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/mnasies/mycheatsheet/actions/workflows/ci.yml"><img src="https://github.com/mnasies/mycheatsheet/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
+  <img src="https://img.shields.io/badge/tests-40%20passing-brightgreen" alt="Tests" />
+  <img src="https://img.shields.io/badge/platform-linux%20%7C%20windows-lightgrey?logo=linux&logoColor=white" alt="Platform" />
+  <img src="https://img.shields.io/badge/rust-2021%20edition-orange?logo=rust" alt="Rust" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License" /></a>
+  <a href="https://github.com/mnasies/mycheatsheet/releases"><img src="https://img.shields.io/github/v/release/mnasies/mycheatsheet?color=success" alt="Latest Release" /></a>
+</p>
 
 ```text
 $ mycheatsheet --notes notes
